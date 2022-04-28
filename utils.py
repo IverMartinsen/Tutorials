@@ -14,7 +14,7 @@ class SampleImage():
 
     def add_square(self, square_size, location):
         # obtain pixels contained in square
-        idx = np.meshgrid(np.arange(location[0], location[0] + square_size).astype('int'), np.arange(location[1], location[1] + square_size).astype('int'))
+        idx = np.meshgrid(np.arange(location[1], location[1] + square_size).astype('int'), np.arange(location[0], location[0] + square_size).astype('int'))
         
         # set pixel values for square pixel
         self.pixels[idx[1], idx[0], 0] = 1
@@ -69,17 +69,22 @@ def generate_background(lower=10, upper=64):
     return SampleImage(shape).pixels
 
 def generate_circle(lower=10, upper=64):
+    # sample shape (height, width, channel)
     shape = np.random.choice(range(lower, upper)), np.random.choice(range(lower, upper)), 3
     radius = np.random.choice(np.arange(np.max((np.ceil(np.min(shape[0:2]) / 4), 4)), np.floor(np.min(shape[0:2]) / 2)))
+    # sample  location (row, column)
     location = np.random.choice(np.arange(radius, shape[0] - radius)), np.random.choice(np.arange(radius, shape[1] - radius))
     image = SampleImage(shape)
     image.add_circle(radius, location)
     return image.pixels
 
 def generate_square(lower=10, upper=64):
+    # sample shape (height, width, channels)
     shape = np.random.choice(range(lower, upper)), np.random.choice(range(lower, upper)), 3
+    # sample square size
     square_size = np.random.choice(np.arange(np.floor(np.min(shape[0:2])/2), np.min(shape[0:2])))
-    location = np.random.choice(np.arange(shape[1] - square_size)), np.random.choice(np.arange(shape[0] - square_size))
+    # sample location (row, column)
+    location = np.random.choice(np.arange(shape[0] - square_size)), np.random.choice(np.arange(shape[1] - square_size))
     image = SampleImage(shape)
     image.add_square(square_size, location)
     return image.pixels
