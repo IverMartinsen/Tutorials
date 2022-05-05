@@ -31,8 +31,8 @@ class Canvas:
         self.sample = np.ones(shape=self.shape) == 1
         self.max_square_size = int(min(size)/10)
         self.max_circle_radius = np.floor(np.min(size)/15)
-        self.objects = {}
-        self.pixels = minmax_scale(np.random.normal(size=np.prod(shape))).reshape(shape)
+        self.objects = {'circles':[], 'squares':[]}
+        self.pixels = minmax_scale(np.random.normal(size=np.prod(self.shape))).reshape(self.shape)
         
 
     def draw_square(self, square_size, location):
@@ -58,7 +58,8 @@ class Canvas:
                 np.random.choice(np.where(self.sample == True)[1][np.where(self.sample == True)[1] < self.shape[1] - square_size])
             )
             
-            self.objects[f'square_{i + 1}'] = location
+            
+            self.objects['squares'].append((location, (location[0] + square_size, location[1] + square_size)))
 
             self.draw_square(square_size, location)    
 
@@ -88,7 +89,9 @@ class Canvas:
                 np.random.choice(np.where(self.sample == True)[1][(radius < np.where(self.sample == True)[1])*(np.where(self.sample == True)[1] < self.shape[1] - radius)])
                 )
             
-            self.objects[f'circle_{i + 1}'] = location
+            p1 = location[0] - radius, location[1] - radius 
+            p2 = location[0] + radius, location[1] + radius
+            self.objects['circles'].append((p1, p2))
             self.draw_circle(radius, location)
 
             
