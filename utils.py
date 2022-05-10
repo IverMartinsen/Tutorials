@@ -34,10 +34,12 @@ class Canvas:
         self.objects = {'circles':[], 'squares':[]}
         self.pixels = minmax_scale(np.random.normal(size=np.prod(self.shape))).reshape(self.shape)
         
+    def get_square_indices(self, square_size, location):
+        return np.meshgrid(np.arange(location[1], location[1] + square_size).astype('int'), np.arange(location[0], location[0] + square_size).astype('int')) 
 
     def draw_square(self, square_size, location):
         # obtain pixels contained in square
-        idx = np.meshgrid(np.arange(location[1], location[1] + square_size).astype('int'), np.arange(location[0], location[0] + square_size).astype('int'))
+        idx = self.get_square_indices(square_size, location)
         
         # set pixel values for square pixel
         self.pixels[idx[1], idx[0], 0] = 1
@@ -49,26 +51,41 @@ class Canvas:
 
     def draw_squares(self, n):
         for i in range(n):
-            # sample square size
-            square_size = np.random.choice(np.arange(4, self.max_square_size))
+
+            condition = True
+
+            # keep sampling locations until square don't intersect with any existing object
+            while condition:
+                # sample square size
+                square_size = np.random.choice(np.arange(4, self.max_square_size)).astype(int)
             
-            # sample top left corner point for square
-            location = (
-                np.random.choice(np.where(self.sample == True)[0][np.where(self.sample == True)[0] < self.shape[0] - square_size]), 
-                np.random.choice(np.where(self.sample == True)[1][np.where(self.sample == True)[1] < self.shape[1] - square_size])
-            )
+                # sample top left corner point for square
+                location = (
+                    np.random.choice(np.where(self.sample == True)[0][np.where(self.sample == True)[0] < self.shape[0] - square_size]).astype(int), 
+                    np.random.choice(np.where(self.sample == True)[1][np.where(self.sample == True)[1] < self.shape[1] - square_size]).astype(int)
+                )
             
-            
+                idx = self.get_square_indices(square_size, location)
+
+                condition = np.any(self.sample[idx[1], idx[0]] == False)
+
             self.objects['squares'].append((location, (location[0] + square_size, location[1] + square_size)))
 
             self.draw_square(square_size, location)    
 
-    def draw_circle(self, radius, location):
+
+    def get_circle_indices(self, radius, location):
         # obtain indices of circle
         idx = np.where(
             (np.meshgrid(np.arange(self.shape[1]), np.arange(self.shape[0]))[1] - location[0])**2 + 
             (np.meshgrid(np.arange(self.shape[1]), np.arange(self.shape[0]))[0] - location[1])**2 < radius**2
             )
+
+        return idx
+
+    def draw_circle(self, radius, location):
+        
+        idx = self.get_circle_indices(radius, location)
             
         # set pixel values for circle pixels
         self.pixels[idx[0], idx[1], 0] = 0
@@ -80,15 +97,24 @@ class Canvas:
 
     def draw_circles(self, n):
         for i in range(n):
-            # sample radius for circle
-            radius = np.random.choice(np.arange(4, self.max_circle_radius))
             
-            # sample center point for circle
-            location = (
-                np.random.choice(np.where(self.sample == True)[0][(radius < np.where(self.sample == True)[0])*(np.where(self.sample == True)[0] < self.shape[0] - radius)]), 
-                np.random.choice(np.where(self.sample == True)[1][(radius < np.where(self.sample == True)[1])*(np.where(self.sample == True)[1] < self.shape[1] - radius)])
-                )
+            condition = True
+
+            # keep sampling locations until the circle don't intersect with any existing objects
+            while condition:
             
+                # sample radius for circle
+                radius = np.random.choice(np.arange(4, self.max_circle_radius)).astype(int)
+            
+                # sample center point for circle
+                location = (
+                    np.random.choice(np.where(self.sample == True)[0][(radius < np.where(self.sample == True)[0])*(np.where(self.sample == True)[0] < self.shape[0] - radius)]).astype(int), 
+                    np.random.choice(np.where(self.sample == True)[1][(radius < np.where(self.sample == True)[1])*(np.where(self.sample == True)[1] < self.shape[1] - radius)]).astype(int)
+                    )
+            
+                condition = np.any(self.sample[self.get_circle_indices(radius, location)] == False)
+
+
             p1 = location[0] - radius, location[1] - radius 
             p2 = location[0] + radius, location[1] + radius
             self.objects['circles'].append((p1, p2))
@@ -101,21 +127,21 @@ def generate_background(lower=10, upper=64):
 
 def generate_circle(lower=10, upper=64):
     # sample shape (height, width, channel)
-    shape = np.random.choice(range(lower, upper)), np.random.choice(range(lower, upper)), 3
-    radius = np.random.choice(np.arange(np.max((np.ceil(np.min(shape[0:2]) / 4), 4)), np.floor(np.min(shape[0:2]) / 2)))
+    size = np.random.choice(range(lower, upper)), np.random.choice(range(lower, upper))
+    radius = np.random.choice(np.arange(np.max((np.ceil(np.min(size) / 4), 4)), np.floor(np.min(size) / 2)))
     # sample  location (row, column)
-    location = np.random.choice(np.arange(radius, shape[0] - radius)), np.random.choice(np.arange(radius, shape[1] - radius))
-    image = SampleImage(shape)
-    image.add_circle(radius, location)
+    location = np.random.choice(np.arange(radius, size[0] - radius)), np.random.choice(np.arange(radius, size[1] - radius))
+    image = Canvas(size)
+    image.draw_circle(radius, location)
     return image.pixels
 
 def generate_square(lower=10, upper=64):
     # sample shape (height, width, channels)
-    shape = np.random.choice(range(lower, upper)), np.random.choice(range(lower, upper)), 3
+    size = np.random.choice(range(lower, upper)), np.random.choice(range(lower, upper))
     # sample square size
-    square_size = np.random.choice(np.arange(np.floor(np.min(shape[0:2])/2), np.min(shape[0:2])))
+    square_size = np.random.choice(np.arange(np.floor(np.min(size)/2), np.min(size)))
     # sample location (row, column)
-    location = np.random.choice(np.arange(shape[0] - square_size)), np.random.choice(np.arange(shape[1] - square_size))
-    image = SampleImage(shape)
-    image.add_square(square_size, location)
+    location = np.random.choice(np.arange(size[0] - square_size)), np.random.choice(np.arange(size[1] - square_size))
+    image = Canvas(size)
+    image.draw_square(square_size, location)
     return image.pixels
