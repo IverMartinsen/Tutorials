@@ -1,0 +1,7 @@
+# This is a BASH script and doesn't require a file extension for it to be executable.
+# BASH script are run in a terminal by the command <bash my-script>.
+# Note that the filename must be commented if it consists of two separate words, 
+# e.g. by the command <bash "my script">.
+
+# print out hello world
+echo "Hello, world!"
