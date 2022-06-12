@@ -5,3 +5,8 @@
 
 # print out hello world
 echo "Hello, world!"
+
+# touch command creates empty file
+# <touch my_file> creates a single file: "my_file"
+# <touch my file> creates two files: "my" and "file"
+# <touch "my file" creates a single file: "my file"
