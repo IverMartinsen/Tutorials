@@ -1,0 +1,19 @@
+---
+# three dashes indicate the start of a YAML(Yet Another Markup Language/YAML Ain't Markup Language) document
+
+# YAML supports
+# - string
+# - float
+# - boolean
+# - int
+# - array
+str_example: "a string"
+float_example: 3.14
+bool_example: true
+int_example: 4
+array_example:
+  - "element 1"
+  - "element 2"
+  - "element 3"
+
+
