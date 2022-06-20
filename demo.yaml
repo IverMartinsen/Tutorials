@@ -1,19 +1,41 @@
 ---
-# three dashes indicate the start of a YAML(Yet Another Markup Language/YAML Ain't Markup Language) document
+# Three dashes indicate the start of a YAML(Yet Another Markup Language/YAML Ain't Markup Language) document
+# There can be several YAML documents in one file
+# YAML is very similary to JSON, and can be read in python using the PyYAML package (<import yaml>)
+# Comments will be ignored.
 
 # YAML supports
+#
 # - string
 # - float
 # - boolean
 # - int
 # - array
-str_example: "a string"
+#
+# in addition to dictionaries. 
+# Everything is written as key/value pairs as in the following examples:
+str_example: "a string" # can also be written as 'a string' or simply a string
 float_example: 3.14
-bool_example: true
+bool_example: true # can also use <Yes>, <No>, <On> or <Off>
 int_example: 4
 array_example:
   - "element 1"
   - "element 2"
   - "element 3"
+also_an_array: [1, 2, 3]
+my_dict:
+  key1: value1
+  key2: value2
+also_a_dict: {key1: value1, key2: value2}
 
 
+# Examples of other numeric types:
+scientific_notation: 1.15e+05
+plus_infty: .inf
+minus_infty: -.Inf
+not_a_number: .NAN
+none: null
+also_none: ~
+
+# The signature for ending a document is three dots, buts that's usually not necessary
+...
