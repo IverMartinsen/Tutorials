@@ -1,12 +1,40 @@
-# This is a BASH script and doesn't require a file extension for it to be executable.
-# BASH script are run in a terminal by the command <bash my-script>.
-# Note that the filename must be commented if it consists of two separate words, 
-# e.g. by the command <bash "my script">.
+#!/bin/bash
+
+# This is a BASH (Bourne-Again SHell) script and doesn't require a file extension for it to be executable. In general it should start with <#!/bin/bash>.
+# BASH script are run in a terminal by the command <bash my-script>, and should be stored in the ~/bin/ directory.
+# Note that the filename must be commented if it consists of two separate words, e.g. by the command <bash "my script">.
+
+# To make the script executable, run chmod +x my_script
+# Then, the script can be run by ./my_script
 
 # print out hello world
 echo "Hello, world!"
+
+# create a variable (note that no spacing is allowed)
+my_variable="a value"
+
+# print variable value
+echo $my_variable
+
+# You can also define conditionals in BASH. Note that the if statement requires spacing before/after square brackets, and must be ended by fi.
+# Logical operators include:
+# -gt = greater than
+# -lt = less than
+# -eq = equal
+# -ne = not equal
+# -ge = greater than or equal
+# -le = less than or equal
+# -z = is null
+if [ $my_variable -gt 1 ]
+then
+    echo $my_variable
+else
+    echo 1
+fi
+
 
 # touch command creates empty file
 # <touch my_file> creates a single file: "my_file"
 # <touch my file> creates two files: "my" and "file"
 # <touch "my file" creates a single file: "my file"
+
