@@ -11,9 +11,10 @@
 echo "Hello, world!"
 
 # create a variable (note that no spacing is allowed)
-my_variable="a value"
+my_variable=2
 
 # print variable value
+echo "This is my variable:"
 echo $my_variable
 
 # You can also define conditionals in BASH. Note that the if statement requires spacing before/after square brackets, and must be ended by fi.
@@ -27,11 +28,25 @@ echo $my_variable
 # -z = is null
 if [ $my_variable -gt 1 ]
 then
-    echo $my_variable
+    echo $my_variable" is greater than 1."
 else
-    echo 1
+    echo $my_variable" is not greater than 1."
 fi
 
+# You can access terminal input arguments by $0, $1, $2, ...
+echo "This script is named "$0
+echo "The first argument for this script is "$1
+
+# This is an example of an array, and how to print out the 3rd element
+my_array=(element1 element2 element3)
+echo ${my_array[2]}
+
+# You can also do arithmetic
+a=2
+b=3
+echo "$a + $b is equal to "$(($a + $b))
+
+# Other supported operations are -, /, *, **, %
 
 # touch command creates empty file
 # <touch my_file> creates a single file: "my_file"
