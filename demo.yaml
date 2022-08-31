@@ -7,7 +7,7 @@
 # YAML supports
 #
 # - string
-# - float
+# - floatsh
 # - boolean
 # - int
 # - array

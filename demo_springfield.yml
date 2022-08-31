@@ -8,9 +8,9 @@ spec:
     spec:
       containers:
       - name: my-container # a name for the container
-        image: "tensorflow/tensorflow:1.13.1-gpu-py3" # the Docker image to use
-        workingDir: /storage
-        command: ["sh", "python3 my_experiment.py"] # specify what should be executed when the job starts, i.e. which command to run in shell
+        image: "python:buster" # the Docker image to use
+        workingDir: /storage/test
+        command: ["echo 'hello world!'"] # specify what should be executed when the job starts, i.e. which command to run in shell
         volumeMounts:
         - name: storage
           mountPath: /storage
