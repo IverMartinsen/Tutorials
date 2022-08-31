@@ -2,15 +2,15 @@
 kind: job
 apiVersion: batch/v1
 metadata:
-  name: my-experiment
+  name: my-job # the name for the job
 spec:
   template:
     spec:
       containers:
-      - name: my-experiment
-        image: "tensorflow/tensorflow:1.13.1-gpu-py3"
+      - name: my-container # a name for the container
+        image: "tensorflow/tensorflow:1.13.1-gpu-py3" # the Docker image to use
         workingDir: /storage
-        command: ["sh", "my-experiment.sh"]
+        command: ["sh", "python3 my_experiment.py"] # specify what should be executed when the job starts, i.e. which command to run in shell
         volumeMounts:
         - name: storage
           mountPath: /storage
