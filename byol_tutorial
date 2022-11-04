@@ -1,0 +1,79 @@
+# define byol loss
+# this also includes the normalization step
+loss = "byol"
+
+def byol_loss():
+    return 2 - 2 * inner_product(x1, x2) / ( norm(x1)*norm(x2) )
+
+# need to define two augmentations
+# random crop
+# random distortion
+
+
+batch1 = "batch of first view"
+batch2 = "batch of second view"
+
+
+# 1 - define encoder to be used as a first step
+# this is used in both the online and the target network
+# this is a cnn without a classification head
+
+encoder_online = "encoder"
+encoder_target = "encoder"
+
+# 2 - define projector
+# used for both target and online
+# a single/two layer mlp
+
+projector_online = "projector"
+projector_target = "projector"
+
+
+# define predictor
+# same as projector
+predictor = "predictor"
+
+# 3 - we need to define the optimizer and learning rate
+lr = 1e-4
+optimizer = "adam"
+
+# train the network using two batches of two views
+# both are used both for online and target, such that both views are used as target
+
+def forward_pass():
+    
+    # create targets for training
+    y = encoder_target(batch1)
+    z = projector_target(y)
+    
+    target1 = z
+    
+    y = encoder_target(batch2)
+    z = projector_target(y)
+    
+    target2 = z
+    
+    # produce predictions for loss
+    
+    y1 = encoder_online(batch1)
+    z1 = projector_online(y)
+    q1 = predictor(z)
+
+    y2 = encoder_online(batch2)
+    z2 = projector_online(y)
+    q2 = predictor(z)
+
+    q = [q1, q2]
+    
+    targets = [target2, target1]
+    
+    # note that the loss is computed for both views for each run
+    
+    return compute_loss(q, targets)
+    
+    # backpropagate loss on online network only
+
+for b in batches:
+    
+    # get online and target weights both for encoder and predictor
+    target_weights = tau * target_weights + (1 - tau) * online_weights
