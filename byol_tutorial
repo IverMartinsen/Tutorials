@@ -1,14 +1,85 @@
+import tensorflow as tf
+import tensorflow_addons as tfa
+from typing import NamedTuple
+
+# Original paper uses 224, 244, 3 images, which is also the requirement for ResNet50
+Shape = NamedTuple("Shape", [("height", int), ("width", int), ("channels", int)])
+img_shape = Shape(224, 224, 3)
+
+
 # define byol loss
 # this also includes the normalization step
-loss = "byol"
+def byol_loss(online, target):
+    
+    # inputs has shape (None, dim)
+    # return mean loss across batch
+    
+    online = tf.math.l2_normalize(online, axis=1)
+    target = tf.math.l2.normalize(target, axis=1)
+    
+    return 2 - 2 * tf.math.reduce_mean(tf.math.reduce_sum(tf.math.multiply(online, target), axis=1))
 
-def byol_loss():
-    return 2 - 2 * inner_product(x1, x2) / ( norm(x1)*norm(x2) )
+
+
+class RandomCropBYOL(tf.keras.layers.Layer):
+    """Random cropping layer as described in paper
+
+    Args:
+        input_size: size of input images (height, width)
+    """
+    def __init__(self, input_size):
+        self.input_size = input_size
+        super().__init__()
+    def call(self, images):
+
+        # sample random area
+        img_area = self.input_size[0] * self.input_size[1]
+        target_area = tf.random.uniform([], 0.08, 1.0, dtype=tf.float32) * img_area
+
+        # sample random aspect ratio
+        log_ratio = (tf.math.log(3 / 4), tf.math.log(4 / 3))
+        aspect_ratio = tf.math.exp(tf.random.uniform([], *log_ratio, dtype=tf.float32))
+        
+        w = tf.cast(tf.round(tf.sqrt(target_area * aspect_ratio)), tf.int32)
+        h = tf.cast(tf.round(tf.sqrt(target_area / aspect_ratio)), tf.int32)
+        
+        w = tf.minimum(w, self.input_size[1])
+        h = tf.minimum(h, self.input_size[0])
+        
+        # sample random offset
+        offset_w = tf.random.uniform([], 0, self.input_size[1] - w + 1, dtype=tf.int32)
+        offset_h = tf.random.uniform([], 0, self.input_size[0] - h + 1, dtype=tf.int32)
+        
+        return tf.keras.layers.Cropping2D(cropping=((offset_h, offset_h + h), (offset_w, offset_w + w)))(images)
+        
+
+
+
+augmentation_module = tf.keras.Sequential([
+    RandomCropBYOL
+    )
+
+# note that the jittering probability is 0.8
+# random saturation
+# gaussian blurring probability is 1 for online and 0.1 for target
+tf.image.resize(images, size=(img_shape.height, img_shape.width, method="bicubic"))
+tf.image.random_brightness(images, max_delta=0.4)
+tf.image.random_contrast(images, 0.0, 0.4)
+tf.image.random_saturation(image, lower=1 - saturation_factor, upper=1 + saturation_factor)
+tf.image.random_hue(images, max_delta=0.1)
+tfa.image.gaussian_filter2d(images, filter_shape=(23, 23), sigma=tf.random.uniform((), 0.1, 2.0))
+
+
+# need to define an optimizer
+optimizer = tf.keras.optimizers.Optimizer()
+
+
+
 
 # need to define two augmentations
 # random crop
 # random distortion
-
+# need to define an augmenter module
 
 batch1 = "batch of first view"
 batch2 = "batch of second view"
@@ -17,9 +88,21 @@ batch2 = "batch of second view"
 # 1 - define encoder to be used as a first step
 # this is used in both the online and the target network
 # this is a cnn without a classification head
+# in the paper they use ResNet50, among others
 
-encoder_online = "encoder"
-encoder_target = "encoder"
+encoder_online = tf.keras.applications.resnet50.ResNet50(
+    include_top=False,
+    weights=None,
+    input_shape=img_shape,
+    pooling="avg"
+)
+
+encoder_target = tf.keras.applications.resnet50.ResNet50(
+    include_top=False,
+    weights=None,
+    input_shape=img_shape,
+    pooling="avg"
+)
 
 # 2 - define projector
 # used for both target and online
@@ -40,40 +123,76 @@ optimizer = "adam"
 # train the network using two batches of two views
 # both are used both for online and target, such that both views are used as target
 
-def forward_pass():
+def compute_loss(view1, view2):
     
-    # create targets for training
-    y = encoder_target(batch1)
-    z = projector_target(y)
     
-    target1 = z
-    
-    y = encoder_target(batch2)
-    z = projector_target(y)
-    
-    target2 = z
-    
-    # produce predictions for loss
-    
-    y1 = encoder_online(batch1)
-    z1 = projector_online(y)
-    q1 = predictor(z)
-
-    y2 = encoder_online(batch2)
-    z2 = projector_online(y)
-    q2 = predictor(z)
-
-    q = [q1, q2]
-    
-    targets = [target2, target1]
-    
-    # note that the loss is computed for both views for each run
-    
-    return compute_loss(q, targets)
     
     # backpropagate loss on online network only
+
+
+
+
 
 for b in batches:
     
     # get online and target weights both for encoder and predictor
     target_weights = tau * target_weights + (1 - tau) * online_weights
+    
+
+
+
+class BYOL(tf.keras.Model):
+    def __init__(
+        self, encoder_online, projector_online, predictor, encoder_target, projector_target
+        ):
+        self.encoder_online = encoder_online
+        self.projector_online = projector_online
+        self.predictor = predictor
+        self.encoder_target = encoder_target
+        self.projector_target = projector_target
+        
+        
+        self.loss_tracker = tf.keras.metrics.Sum(name="loss")
+        
+    def train_step(self, data):
+        # create views
+        view1, view2 = self.augmenter(data)
+        
+        
+        # create targets for training
+        y1_target = self.encoder_target(view1)
+        target1 = self.projector_target(y1_target)
+        
+        y2_target = self.encoder_target(view2)
+        target2 = self.projector_target(y2_target)
+        
+        target = tf.concat([target1, target2], axis=0)
+
+        with tf.GradientTape() as tape:
+            # produce predictions for loss
+            y1_online = self.encoder_online(view1)
+            z1 = self.projector_online(y1_online)
+            q1 = self.predictor(z1)
+
+            y2_online = self.encoder_online(view2)
+            z2 = self.projector_online(y2_online)
+            q2 = self.predictor(z2)
+
+            online = tf.concat([q2, q1], axis=0)
+            
+            loss = byol_loss(online, target)
+
+            # note that the loss is computed for both views for each run
+        
+        grads_encoder = tape.gradient(loss, encoder_online.trainable_variables)
+        grads_projector = tape.gradient(loss, projector_online.trainable_variables)
+        grads_predictor = tape.gradient(loss, predictor.trainable_variables)
+        
+        optimizer.apply_gradients(zip(grads_encoder, encoder_online.trainable_variables))
+        optimizer.apply_gradients(zip(grads_projector, projector_online.trainable_variables))
+        optimizer.apply_gradients(zip(grads_predictor, predictor.trainable_variables))
+        
+        self.loss_tracker.update_state(loss)
+        
+        return {"loss": self.loss_tracker.results()}
+        
